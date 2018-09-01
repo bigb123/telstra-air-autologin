@@ -38,6 +38,7 @@ if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networkset
     # (this pop-up window that appears on top of other windows every time when
     # you're connected to the network that you need to log in)as it blocks all
     #the network traffic (and is annoying).
+    sleep(4)
     getoutput('pkill "Captive Network Assistant"')
     sleep(4)
     getoutput('pkill "Captive Network Assistant"')
@@ -47,7 +48,7 @@ if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networkset
     driver.get('https://www.telstra.com.au/airconnect#/main')
 
     # Wait till page is fully loaded ('Log in' button must be visible)'
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="loginForm"]/div/p[2]/button')))
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//*[@id="loginForm"]/div/p[2]/button')))
 
     # Fill the form and log in
     driver.find_element_by_id('username').send_keys(args.username)
@@ -56,6 +57,6 @@ if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networkset
 
     # Wait till next page is loaded ('Return to home' button must be visible) and
     # quit the browser
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[11]/div/a/form/input')))
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[11]/div/a/form/input')))
 
     driver.quit()
