@@ -45,8 +45,6 @@ cat << EOF > "$HOME/Library/LaunchAgents/${label_name}.plist"
 
   <key>WatchPaths</key>
   <array>
-    <string>/etc/resolv.conf</string>
-    <string>/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist</string>
     <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
   </array>
 

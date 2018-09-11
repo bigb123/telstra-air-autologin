@@ -14,11 +14,29 @@ from argparse import ArgumentParser
 from subprocess import getoutput
 import re
 from time import sleep
+from threading import Thread
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+'''
+We need to kill
+'/System/Library/CoreServices/Captive Network Assistant.app/Contents/MacOS/Captive Network Assistant'
+(this pop-up window that appears on top of other windows every time when
+you're connected to the network that you need to log in)as it blocks all
+the network traffic (and is annoying).
+
+Arguments:
+- how_often - period in seconds between every kill execution
+'''
+def captive_portal_killer(how_often = 1):
+
+    while True:
+        getoutput('pkill "Captive Network Assistant"')
+        sleep(how_often)
+
 
 argument_parser = ArgumentParser()
 argument_parser.add_argument('username',
@@ -33,15 +51,16 @@ args = argument_parser.parse_args()
 # Get Wi-fi name and run it only if it is Telstra Air.
 if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networksetup -getairportnetwork en0')) == 'Telstra Air':
 
-    # We need to kill
-    # '/System/Library/CoreServices/Captive Network Assistant.app/Contents/MacOS/Captive Network Assistant'
-    # (this pop-up window that appears on top of other windows every time when
-    # you're connected to the network that you need to log in)as it blocks all
-    #the network traffic (and is annoying).
-    sleep(4)
-    getoutput('pkill "Captive Network Assistant"')
-    sleep(4)
-    getoutput('pkill "Captive Network Assistant"')
+    # Check if the "Captive portal" window is available. If it is that means 
+    # we need to log in to Telstra Air. Other way there's no point to execute
+    # script.
+    if ( '' == getoutput('ps ax | grep "Captive Network Assistant" | grep -v "grep"')):
+        exit(0)
+
+    # Kill the Captive Portal. It blocks all the network traffic.
+    captive_killer_thread = Thread(target=captive_portal_killer)
+    captive_killer_thread.daemon = True
+    captive_killer_thread.start()
 
     # Open browser
     driver = webdriver.Safari()
