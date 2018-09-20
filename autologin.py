@@ -45,7 +45,13 @@ Returns True if network connection is established.
 '''
 def connected_to_network():
     try:
-        urlopen('http://www.freenom.world/').read()
+        # If it is able to connect but only to Telstra Captive Portal that means
+        # there's no Internet connection.
+        if re.search(
+            '<title>(.*)</title>',
+            urlopen('http://www.freenom.world/').read().decode('utf-8')).group(1) == 'Telstra Air Captive Portal':
+            return False
+    # UrlOpen throws this error when there's no Internet connection at all.
     except URLError:
         return False
 
@@ -67,7 +73,9 @@ argument_parser.add_argument('password',
 args = argument_parser.parse_args()
 
 # Get Wi-fi name and run it only if it is Telstra Air.
-if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networksetup -getairportnetwork en0')) == 'Telstra Air':
+if re.compile('Current Wi-Fi Network: ').sub(
+    '',
+    getoutput('/usr/sbin/networksetup -getairportnetwork en0')) == 'Telstra Air':
 
     # Kill the Captive Portal. It blocks all the network traffic.
     captive_killer_thread = Thread(target=captive_portal_killer)
@@ -78,7 +86,7 @@ if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networkset
     driver = webdriver.Safari()
     driver.get('https://www.telstra.com.au/airconnect#/main')
 
-    # Wait till page is fully loaded ('Log in' button must be visible)'.
+    # Wait till page is fully loaded ('Log in' button must be visible).
     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//*[@id="loginForm"]/div/p[2]/button')))
 
     # Fill the form and log in.
@@ -86,8 +94,8 @@ if re.compile('Current Wi-Fi Network: ').sub('', getoutput('/usr/sbin/networkset
     driver.find_element_by_id('password').send_keys(args.password)
     driver.find_element_by_xpath('//*[@id="loginForm"]/div/p[2]/button').click()
 
-    # Wait till next page is loaded ('Return to home' button must be visible)
-    # and quit the browser.
+    # Wait till next page is loaded ('Return to home' button must be visible).
     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[11]/div/a/form/input')))
 
+    # Quit the browser.
     driver.quit()
