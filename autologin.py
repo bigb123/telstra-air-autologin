@@ -15,6 +15,7 @@ from subprocess import getoutput
 import re
 from time import sleep
 from threading import Thread
+
 from urllib.request import urlopen
 from urllib.error import URLError
 
@@ -36,7 +37,7 @@ Arguments:
 def captive_portal_killer(how_often = 1):
 
     while True:
-        getoutput('pkill "Captive Network Assistant"')
+        print("Killing captive portal." ,getoutput('pkill "Captive Network Assistant"'))
         sleep(how_often)
 
 
@@ -48,8 +49,8 @@ def connected_to_network():
         # If it is able to connect but only to Telstra Captive Portal that means
         # there's no Internet connection.
         if re.search(
-            '<title>(.*)</title>',
-            urlopen('http://www.freenom.world/').read().decode('utf-8')).group(1) == 'Telstra Air Captive Portal':
+                    '<title>(.*)</title>',
+                    urlopen('https://www.freenom.world/en/index.html?lang=en').read().decode('utf-8')).group(1) != 'Freenom World':
             return False
     # UrlOpen throws this error when there's no Internet connection at all.
     except URLError:
@@ -60,6 +61,7 @@ def connected_to_network():
 
 # If there is connection to outside world - there's no point to execute script.
 if connected_to_network():
+    print("Network connection established. No need to execute script")
     exit(0)
 
 argument_parser = ArgumentParser()
@@ -73,9 +75,9 @@ argument_parser.add_argument('password',
 args = argument_parser.parse_args()
 
 # Get Wi-fi name and run it only if it is Telstra Air.
-if re.compile('Current Wi-Fi Network: ').sub(
-    '',
-    getoutput('/usr/sbin/networksetup -getairportnetwork en0')) == 'Telstra Air':
+if re.search(
+            'Current Wi-Fi Network: (.*)',
+            getoutput('/usr/sbin/networksetup -getairportnetwork en0')).group(1) == 'Telstra Air':
 
     # Kill the Captive Portal. It blocks all the network traffic.
     captive_killer_thread = Thread(target=captive_portal_killer)
@@ -83,8 +85,10 @@ if re.compile('Current Wi-Fi Network: ').sub(
     captive_killer_thread.start()
 
     # Open browser.
-    driver = webdriver.Safari()
-    driver.get('https://www.telstra.com.au/airconnect#/main')
+    driver = webdriver.Chrome()
+    driver.get('https://www.telstra.com.au/airconnect#fon')
+    # https://telstra.portal.fon.com/jcp/telstra?res=welcome&nasid=1C-C6-3C-4E-CB-13&uamip=192.168.182.1&uamport=3990&mac=AC-BC-32-9A-01-7D&challenge=e84088d73ad3937edd56caba310f12c2&ip=192.168.182.119&userurl=http%3A%2F%2Fgoogle.com%2F&cap=&lang=en_GB&LANGUAGE=en_GB
+    # https://www.telstra.com.au/airconnect#/main
 
     # Wait till page is fully loaded ('Log in' button must be visible).
     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//*[@id="loginForm"]/div/p[2]/button')))
@@ -93,6 +97,11 @@ if re.compile('Current Wi-Fi Network: ').sub(
     driver.find_element_by_id('username').send_keys(args.username)
     driver.find_element_by_id('password').send_keys(args.password)
     driver.find_element_by_xpath('//*[@id="loginForm"]/div/p[2]/button').click()
+
+    # Wait for connect button to be visible
+    # WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//*[@id="connectBtn"')))
+    sleep(5)
+    driver.find_element_by_xpath('//*[@id="connectBtn"]').click()
 
     # Wait till next page is loaded ('Return to home' button must be visible).
     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[11]/div/a/form/input')))

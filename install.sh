@@ -46,6 +46,7 @@ cat << EOF > "$HOME/Library/LaunchAgents/${label_name}.plist"
   <key>WatchPaths</key>
   <array>
     <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
+    <string>/Library/Preferences/SystemConfiguration/com.apple.accounts.exists.plist</string>
   </array>
 
   <key>RunAtLoad</key>
